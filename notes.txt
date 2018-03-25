@@ -1,1 +1,6 @@
 Song list: http://www.x5bot.com/songmkv/mkv/song.txt
+
+60163822
+
+require 'songbook'; Songbook.start_download(60163822)
+Songbook.download_progress(60163822)

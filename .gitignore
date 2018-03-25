@@ -24,3 +24,5 @@
 
 # bundle install directory
 /vendor
+
+/public/songs
