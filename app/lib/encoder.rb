@@ -29,6 +29,10 @@ class Encoder
           if File.read(manifest_path(id)) =~ /EXT-X-ENDLIST/
             FileUtils.touch(done_path(id))
           end
+
+          @@mu.synchronize do
+            @@in_progress.delete(id)
+          end
         end
       end
 
@@ -36,8 +40,26 @@ class Encoder
     end
   end
 
+  def self.stop_all()
+    while !@@in_progress.empty?
+      stop_encoding(@@in_progress[0])
+    end
+  end
+
   def self.stop_encoding(id)
-    # line = `ps aux | grep ffmpeg | grep #{id}`.strip
+    Rails.logger.info "Stopping encoding for id #{id}"
+
+    line = `ps aux | grep ffmpeg | grep #{id}`.strip
+
+    return if line.empty?
+
+    pid = line.split(/\s+/)[1].to_i
+    @@mu.synchronize do
+      @@in_progress.delete(id)
+    end
+
+    Rails.logger.info "Killing encoding process with PID #{pid}"
+    Process.kill('KILL', pid)
   end
 
   def self.frags_folder(id)

@@ -28,6 +28,7 @@ class Playlist
     else
       song = Song.find(id)
 
+      Encoder.stop_all()
       Encoder.start_encoding(id)
       while !Encoder.ready_for_streaming?(id)
       end
