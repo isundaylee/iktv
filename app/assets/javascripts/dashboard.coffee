@@ -22,4 +22,8 @@ ready = ->
   else
     setInterval refreshDownloadProgressSpans, 1000
 
+    $('#play_next').click ->
+      App.playlist_notifications.playNext()
+      return false
+
 $(ready)

@@ -1,3 +1,6 @@
+%div.actions
+  %a#play_next{href: '#'} 切歌
+
 %table#songlist
   - @songs.each do |song|
     - downloaded, progress = song.status
