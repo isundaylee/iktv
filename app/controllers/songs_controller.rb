@@ -14,11 +14,12 @@ class SongsController < ApplicationController
     @id = params[:id].to_i
     @song = Song.find(@id)
 
-    Encoder.start_encoding(@id)
-    while !Encoder.ready_for_streaming?(@id)
+    Encoder.start_encoding(id)
+    if Encoder.wait_until_ready(id)
+      redirect_to @song.play_path
+    else
+      redirect_to :root
     end
-
-    redirect_to @song.play_path
   end
 
   def append_to_playlist

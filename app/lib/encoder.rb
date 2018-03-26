@@ -88,4 +88,16 @@ class Encoder
   def self.ready_for_streaming?(id)
     return File.exists?(frags_folder(id).join("frags1.ts"))
   end
+
+  def self.wait_until_ready(id)
+    20.times do
+      if ready_for_streaming?(id)
+        return true
+      end
+
+      sleep(0.5)
+    end
+
+    return true
+  end
 end

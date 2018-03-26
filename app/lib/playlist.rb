@@ -37,11 +37,12 @@ class Playlist
           url: nil
       end
 
-      while !Encoder.ready_for_streaming?(id)
+      if Encoder.wait_until_ready(id)
+        link = song.play_path
+        @@playing = true
+      else
+        link = nil
       end
-
-      link = song.play_path
-      @@playing = true
     end
 
     ActionCable.server.broadcast "playlist_notifications_channel",
