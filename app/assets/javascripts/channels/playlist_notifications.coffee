@@ -8,8 +8,9 @@ App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificatio
     # When the channel disconnects
 
   received: (data) ->
-    if data.type == 'play'
-      window.playSong(data.url)
+    if window.isPlayer
+      if data.type == 'play'
+        window.playSong(data.url)
 
   playNext: ->
     @perform('play_next')
