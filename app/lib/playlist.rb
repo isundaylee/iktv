@@ -4,6 +4,10 @@ class Playlist
   @@list = []
   @@playing = false
 
+  def self.upcomings
+    return @@list
+  end
+
   def self.pop_next()
     @@list.each do |song|
       if Songbook.get_status(song)[0]

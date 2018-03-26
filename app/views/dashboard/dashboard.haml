@@ -1,33 +1,37 @@
 %div.actions
   %a#play_next{href: '#'} 切歌
+  = link_to '已点歌曲', root_path(term: '__PLAYLIST__')
 
 = form_tag(root_path, id: 'search_form', method: :GET) do
   = text_field_tag :term, @term, placeholder: '搜索歌曲名'
 
-%table#songlist
-  - @songs.each do |song|
-    - downloaded, progress = song.status
-    %tr{id: 'song_' + song.id.to_s}
-      %td.name
-        = song.name
-      %td.artist
-        = song.artist
-      %td.status
-        - if downloaded
-          已下载
-        - elsif progress.nil?
-          = link_to '下载', download_song_path(song), method: 'POST'
-        - else
-          正在下载 -
-          %span.progress{'data-id' => song.id}
-            = '%.2f%%' % (100 * progress)
-          = form_tag(refresh_download_progress_song_path(song), remote: true,
-            data: {role: "refresh-download-progress"}) do
-            = hidden_field_tag(:id, song.id)
-      %td.play
-        - if downloaded
-          - index = Playlist.get_index_of_song(song.id)
-          - if index.nil?
-            = link_to '点播', append_to_playlist_song_path(song), method: 'POST'
+- if @songs.empty?
+  %p.empty-list 暂无歌曲
+- else
+  %table#songlist
+    - @songs.each do |song|
+      - downloaded, progress = song.status
+      %tr{id: 'song_' + song.id.to_s}
+        %td.name
+          = song.name
+        %td.artist
+          = song.artist
+        %td.status
+          - if downloaded
+            已下载
+          - elsif progress.nil?
+            = link_to '下载', download_song_path(song), method: 'POST'
           - else
-            = "已点歌曲 - #{index}"
+            正在下载 -
+            %span.progress{'data-id' => song.id}
+              = '%.2f%%' % (100 * progress)
+            = form_tag(refresh_download_progress_song_path(song), remote: true,
+              data: {role: "refresh-download-progress"}) do
+              = hidden_field_tag(:id, song.id)
+        %td.play
+          - if downloaded
+            - index = Playlist.get_index_of_song(song.id)
+            - if index.nil?
+              = link_to '点播', append_to_playlist_song_path(song), method: 'POST'
+            - else
+              = "已点歌曲 - #{index}"

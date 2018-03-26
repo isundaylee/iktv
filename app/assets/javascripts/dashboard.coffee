@@ -16,6 +16,8 @@ window.playSong = (path) ->
 ready = ->
   window.isPlayer = ($('video').length > 0)
 
+  console.log('INIT')
+
   if window.isPlayer
     $('video').bind 'ended', ->
       playNextSong()
@@ -26,4 +28,4 @@ ready = ->
       App.playlist_notifications.playNext()
       return false
 
-$(ready)
+$(document).on('turbolinks:load', ready)

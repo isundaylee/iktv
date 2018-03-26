@@ -7,7 +7,7 @@ class SongsController < ApplicationController
     id = params[:id].to_i
 
     Songbook.start_download(id)
-    redirect_to :root
+    redirect_back(fallback_location: root_path)
   end
 
   def refresh_download_progress
@@ -30,7 +30,7 @@ class SongsController < ApplicationController
     @id = params[:id].to_i
     Playlist.append(@id)
 
-    redirect_to :root
+    redirect_back(fallback_location: root_path)
   end
 
   private

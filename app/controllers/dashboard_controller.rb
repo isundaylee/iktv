@@ -4,13 +4,18 @@ class DashboardController < ApplicationController
   def dashboard
     @term = params[:term]
 
-
-    if @term.present?
-      byname = Song.where('name like ?', "%#{@term.strip}%").limit(100).to_a
-      byartist = Song.where(artist: @term).limit(100).to_a
-      @songs = byname + byartist
+    if @term == '__PLAYLIST__'
+      @term = nil
+      upcomings = Playlist.upcomings
+      @songs = upcomings.map { |id| Song.find(id) }
     else
-      @songs = []
+      if @term.present?
+        byname = Song.where('name like ?', "%#{@term.strip}%").limit(100).to_a
+        byartist = Song.where(artist: @term).limit(500).to_a
+        @songs = byname + byartist
+      else
+        @songs = []
+      end
     end
   end
 
