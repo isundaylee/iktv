@@ -1,5 +1,6 @@
 require 'songbook'
 require 'encoder'
+require 'playlist'
 
 class SongsController < ApplicationController
   def download
@@ -23,6 +24,13 @@ class SongsController < ApplicationController
     end
 
     redirect_to @song.play_path
+  end
+
+  def append_to_playlist
+    @id = params[:id].to_i
+    Playlist.append(@id)
+
+    redirect_to :root
   end
 
   private

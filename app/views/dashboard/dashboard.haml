@@ -1,12 +1,12 @@
 %table#songlist
   - @songs.each do |song|
+    - downloaded, progress = song.status
     %tr{id: 'song_' + song.id.to_s}
       %td.name
         = song.name
       %td.artist
         = song.artist
       %td.status
-        - downloaded, progress = song.status
         - if downloaded
           已下载
         - elsif progress.nil?
@@ -19,4 +19,9 @@
             data: {role: "refresh-download-progress"}) do
             = hidden_field_tag(:id, song.id)
       %td.play
-        = link_to '播放', play_song_path(song)
+        - if downloaded
+          - index = Playlist.get_index_of_song(song.id)
+          - if index.nil?
+            = link_to '点播', append_to_playlist_song_path(song), method: 'POST'
+          - else
+            = "已点歌曲 - #{index}"
