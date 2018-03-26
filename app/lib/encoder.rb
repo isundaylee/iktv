@@ -21,10 +21,15 @@ class Encoder
 
         @@threads << Thread.start do
           original = FFMPEG::Movie.new(Songbook.song_path(id).to_s)
+          audio_stream_index = original.audio_streams[-1][:index]
           output_path = manifest_path(id)
 
-          original.transcode(output_path.to_s,
-            %w(-b 1000k -vcodec libx264 -hls_time 1 -hls_list_size 0 -f hls -g 24))
+          options = %W(-map 0:0 -b 1000k -vcodec libx264 -hls_time 1 -hls_list_size 0 -f hls -g 24)
+          original.audio_streams.last(1).each do |as|
+            options = ["-map", "0:#{as[:index]}"] + options
+          end
+
+          original.transcode(output_path.to_s, options)
 
           if File.read(manifest_path(id)) =~ /EXT-X-ENDLIST/
             FileUtils.touch(done_path(id))
