@@ -71,9 +71,20 @@ class Songbook
     return true
   end
 
+  def self.song_path(id)
+    FileUtils.mkdir_p(SONG_FOLDER)
+    SONG_FOLDER.join("#{id}.mpg")
+  end
+
+  def self.frags_path(id)
+    frags_folder = SONG_FOLDER.join("#{id}.frags")
+    FileUtils.mkdir_p(frags_folder)
+    frags_folder.join("frags.m3u8")
+  end
+
+  def self.second_part_path(id)
+    SONG_FOLDER.join("#{id}.frags/frags1.ts")
+  end
+
   private
-    def self.song_path(id)
-      FileUtils.mkdir_p(SONG_FOLDER)
-      SONG_FOLDER.join("#{id}.mpg")
-    end
 end

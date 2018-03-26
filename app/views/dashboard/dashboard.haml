@@ -19,4 +19,4 @@
             data: {role: "refresh-download-progress"}) do
             = hidden_field_tag(:id, song.id)
       %td.play
-        = link_to '播放', song.video_path
+        = link_to '播放', play_song_path(song)
