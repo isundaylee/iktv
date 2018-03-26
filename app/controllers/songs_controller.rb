@@ -10,11 +10,6 @@ class SongsController < ApplicationController
     redirect_back(fallback_location: root_path)
   end
 
-  def refresh_download_progress
-    @id = params[:id].to_i
-    @progress_text = "%.2f%%" % (100 * Songbook.get_status(@id)[1])
-  end
-
   def play
     @id = params[:id].to_i
     @song = Song.find(@id)

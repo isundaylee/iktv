@@ -25,10 +25,7 @@
           - else
             正在下载 -
             %span.progress{'data-id' => song.id}
-              = '%.2f%%' % (100 * progress)
-            = form_tag(refresh_download_progress_song_path(song), remote: true,
-              data: {role: "refresh-download-progress"}) do
-              = hidden_field_tag(:id, song.id)
+              = '%d%' % (100 * progress)
         %td.play
           - if downloaded
             - index = Playlist.get_index_of_song(song.id)

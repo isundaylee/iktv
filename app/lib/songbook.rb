@@ -59,11 +59,21 @@ class Songbook
           @@mu.synchronize do
             @@total_lengths[id] = length
           end
+
+          ActionCable.server.broadcast "songs_notifications_channel",
+            type: 'download_progress_update',
+            id: id,
+            progress: 0.0
         end,
         progress_proc: lambda do |size|
           @@mu.synchronize do
             @@downloaded_lengths[id] = size
           end
+
+          ActionCable.server.broadcast "songs_notifications_channel",
+            type: 'download_progress_update',
+            id: id,
+            progress: 1.0 * size / @@total_lengths[id]
         end
       ).read
 

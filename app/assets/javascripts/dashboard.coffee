@@ -1,7 +1,3 @@
-refreshDownloadProgressSpans = ->
-  for el in $('[data-role=refresh-download-progress]')
-    Rails.fire(el, 'submit')
-
 playNextSong = ->
   App.playlist_notifications.playNext()
 
@@ -22,8 +18,6 @@ ready = ->
     $('video').bind 'ended', ->
       playNextSong()
   else
-    setInterval refreshDownloadProgressSpans, 1000
-
     $('#play_next').click ->
       App.playlist_notifications.playNext()
       return false
