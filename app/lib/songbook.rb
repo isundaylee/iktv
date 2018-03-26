@@ -11,6 +11,10 @@ class Songbook
   @@downloaded_lengths = {}
   @@threads = []
 
+  def self.downloading
+    return @@total_lengths.keys
+  end
+
   def self.is_downloaded?(id)
     File.exists?(song_path(id))
   end

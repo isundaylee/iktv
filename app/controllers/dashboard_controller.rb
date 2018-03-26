@@ -1,4 +1,5 @@
 require 'playlist'
+require 'songbook'
 
 class DashboardController < ApplicationController
   def dashboard
@@ -7,6 +8,10 @@ class DashboardController < ApplicationController
     if @term == '__PLAYLIST__'
       @term = nil
       upcomings = Playlist.upcomings
+      @songs = upcomings.map { |id| Song.find(id) }
+    elsif @term == '__DOWNLOADING__'
+      @term = nil
+      upcomings = Songbook.downloading
       @songs = upcomings.map { |id| Song.find(id) }
     else
       if @term.present?
