@@ -2,7 +2,9 @@ App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificatio
   connected: ->
     # When the channel connects
     if window.isPlayer
-      @playNext()
+      if !@started
+        @started = true
+        @playNext()
 
   disconnected: ->
     # When the channel disconnects
