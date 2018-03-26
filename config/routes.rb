@@ -1,3 +1,10 @@
 Rails.application.routes.draw do
-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
+  root 'dashboard#dashboard'
+
+  resources :songs, only: [] do
+    member do
+      post 'download'
+      post 'refresh_download_progress'
+    end
+  end
 end

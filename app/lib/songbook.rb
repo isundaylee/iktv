@@ -17,13 +17,15 @@ class Songbook
 
   def self.get_status(id)
     if File.exists?(song_path(id))
-      return true, nil
+      return true, 1.0
     end
 
     progress = nil
 
     @@mu.synchronize do
-      if !@@total_lengths.include?(id) || @@total_lengths[id] == 0
+      if !@@total_lengths.include?(id)
+        progress = nil
+      elsif @@total_lengths[id] == 0
         progress = 0.0
       else
         progress = 1.0 * @@downloaded_lengths[id] / @@total_lengths[id]
@@ -40,6 +42,10 @@ class Songbook
     end
 
     @@threads << Thread.start do
+      @@mu.synchronize do
+        @@total_lengths[id] = 0
+      end
+
       song_url = SONG_URL % id
 
       puts 'Downloading song from ' + song_url
