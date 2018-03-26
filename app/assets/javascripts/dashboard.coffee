@@ -2,7 +2,7 @@ refreshDownloadProgressSpans = ->
   for el in $('[data-role=refresh-download-progress]')
     Rails.fire(el, 'submit')
 
-playNextSong = ->
+window.playNextSong = ->
   for form in $('#play_next_song_form')
     Rails.fire(form, 'submit')
 
@@ -15,8 +15,6 @@ window.playSong = (path) ->
 
 ready = ->
   setInterval refreshDownloadProgressSpans, 1000
-
-  playNextSong()
 
   $('video').bind 'ended', ->
     playNextSong()
