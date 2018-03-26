@@ -7,8 +7,4 @@ class DashboardController < ApplicationController
 
   def player
   end
-
-  def play_next_song
-    Playlist.next()
-  end
 end

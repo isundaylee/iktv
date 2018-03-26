@@ -1,7 +1,6 @@
 Rails.application.routes.draw do
   root 'dashboard#dashboard'
   get 'player', to: 'dashboard#player'
-  post 'play_next_song', to: 'dashboard#play_next_song'
 
   resources :songs, only: [] do
     member do
