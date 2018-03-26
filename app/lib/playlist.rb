@@ -29,7 +29,14 @@ class Playlist
       song = Song.find(id)
 
       Encoder.stop_all()
-      Encoder.start_encoding(id)
+      if Encoder.start_encoding(id)
+        # We actually started an encoding
+        # Send a blank screen before we're ready to show the actual song
+        ActionCable.server.broadcast "playlist_notifications_channel",
+          type: 'play',
+          url: nil
+      end
+
       while !Encoder.ready_for_streaming?(id)
       end
 
