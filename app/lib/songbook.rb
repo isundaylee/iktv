@@ -45,11 +45,15 @@ class Songbook
       return false
     end
 
-    @@threads << Thread.start do
-      @@mu.synchronize do
+    @@mu.synchronize do
+      if @@total_lengths.include?(id)
+        return false
+      else
         @@total_lengths[id] = 0
       end
+    end
 
+    @@threads << Thread.start do
       song_url = SONG_URL % id
 
       puts 'Downloading song from ' + song_url

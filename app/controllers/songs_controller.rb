@@ -23,6 +23,11 @@ class SongsController < ApplicationController
 
   def append_to_playlist
     @id = params[:id].to_i
+
+    if !Songbook.get_status(@id)[0]
+      Songbook.start_download(@id)
+    end
+
     Playlist.append(@id)
 
     redirect_back(fallback_location: root_path)

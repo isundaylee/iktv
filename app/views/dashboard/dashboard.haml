@@ -27,9 +27,8 @@
             %span.progress{'data-id' => song.id}
               = '%d%' % (100 * progress)
         %td.play
-          - if downloaded
-            - index = Playlist.get_index_of_song(song.id)
-            - if index.nil?
-              = link_to '点播', append_to_playlist_song_path(song), method: 'POST'
-            - else
-              = "已点歌曲 - #{index}"
+          - index = Playlist.get_index_of_song(song.id)
+          - if index.nil?
+            = link_to '点播', append_to_playlist_song_path(song), method: 'POST'
+          - else
+            = "已点歌曲 - #{index}"
