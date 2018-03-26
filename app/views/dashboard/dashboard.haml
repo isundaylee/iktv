@@ -1,6 +1,9 @@
 %div.actions
   %a#play_next{href: '#'} 切歌
 
+= form_tag(root_path, id: 'search_form', method: :GET) do
+  = text_field_tag :term, @term, placeholder: '搜索歌曲名'
+
 %table#songlist
   - @songs.each do |song|
     - downloaded, progress = song.status
