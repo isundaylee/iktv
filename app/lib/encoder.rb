@@ -23,19 +23,34 @@ class Encoder
     schedule
   end
 
-  def self.full_schedule
-    full_schedule = @@schedule.clone
+  def self.effective_schedule
+    effective_schedule = @@schedule.clone
+
+    Songbook.downloaded.each do |id|
+      load_job_for_song(id)
+    end
+
+    in_progress = []
+    backlog = []
 
     @@jobs.keys.each do |id|
       job = @@jobs[id]
 
-      next if !job.running?
-      next if full_schedule.include?(id)
+      next if effective_schedule.include?(id)
 
-      full_schedule << id
+      if job.running?
+        in_progress << id
+      else
+        backlog << id
+      end
+
+      effective_schedule << id
     end
 
-    full_schedule.select { |s| Songbook.get_status(s)[0] }
+    effective_schedule += in_progress
+    effective_schedule += backlog
+
+    effective_schedule.select { |s| Songbook.downloaded?(s) }
   end
 
   def self.schedule
@@ -45,7 +60,9 @@ class Encoder
       end
 
       winner = nil
-      full_schedule.each do |id|
+      eff_schedule = effective_schedule
+      Rails.logger.info("Effective schedule is: #{eff_schedule}")
+      eff_schedule.each do |id|
         if !@@jobs[id].ready?
           winner = id
           break

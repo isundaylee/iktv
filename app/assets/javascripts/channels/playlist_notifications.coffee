@@ -13,7 +13,6 @@ App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificatio
 
   received: (data) ->
     if window.isPlayer
-      console.log(data, @lastProcessedPlaySeq)
       if data.type == 'play'
         if data.seq > @lastProcessedPlaySeq
           @lastProcessedPlaySeq = data.seq

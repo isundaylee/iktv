@@ -13,7 +13,7 @@ class EncoderJob
   def start!
     return false if ready?
 
-    input_file = Songbook.song_path(@song.id)
+    input_file = Songbook.downloaded_video_path(@song.id)
     output_file = encoded_video_path
 
     audio_track_index = FFMPEG::Movie.new(input_file.to_s).audio_streams[-1][:index]

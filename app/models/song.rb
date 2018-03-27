@@ -1,7 +1,15 @@
 require 'songbook'
 
 class Song < ApplicationRecord
-  def status
+  def downloaded?
+    Songbook.downloaded?(self.id)
+  end
+
+  def downloading?
+    Songbook.downloading?(self.id)
+  end
+
+  def download_status
     Songbook.get_status(self.id)
   end
 

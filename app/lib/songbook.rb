@@ -2,100 +2,108 @@ require 'thread'
 require 'open-uri'
 require 'fileutils'
 
-SONG_FOLDER = Rails.root.join('public/songs/')
+SONG_FOLDER = Rails.root.join('public/songs')
 SONG_URL = 'http://www.x5bot.com/songmkv/mkv/%d.mpg'
 
 class Songbook
   @@mu = Mutex.new
+
   @@total_lengths = {}
   @@downloaded_lengths = {}
+
+  @@downloaded = Set.new()
+
   @@threads = []
 
-  def self.downloading
-    return @@total_lengths.keys
+  # Loading previously downloaded songs upon startup
+  Dir.glob(SONG_FOLDER.join("*.mpg")).each do |path|
+    name = File.basename(path)
+    id = name.split('.')[0].to_i
+    @@downloaded << id
   end
 
-  def self.is_downloaded?(id)
-    File.exists?(song_path(id))
+  def self.downloading
+    @@total_lengths.keys
+  end
+
+  def self.downloading?(id)
+    @@total_lengths.include? id
+  end
+
+  def self.downloaded
+    @@downloaded.clone
+  end
+
+  def self.downloaded?(id)
+    @@downloaded.include? id
   end
 
   def self.get_status(id)
-    if File.exists?(song_path(id))
-      return true, 1.0
-    end
-
-    progress = nil
-
     @@mu.synchronize do
-      if !@@total_lengths.include?(id)
-        progress = nil
-      elsif @@total_lengths[id] == 0
-        progress = 0.0
+      if downloaded?(id)
+        next true, 1.0
+      elsif downloading?(id)
+        next false, 1.0 * @@downloaded_lengths[id] / @@total_lengths[id]
       else
-        progress = 1.0 * @@downloaded_lengths[id] / @@total_lengths[id]
+        next false, nil
       end
     end
-
-    return false, progress
   end
 
   def self.start_download(id)
-    downloaded, _ = self.get_status(id)
-    if downloaded
-      return false
-    end
-
     @@mu.synchronize do
-      if @@total_lengths.include?(id)
-        return false
+      if downloaded?(id) || downloading?(id)
+        false
       else
-        @@total_lengths[id] = 0
-      end
-    end
+        @@total_lengths[id] = 1
+        @@downloaded_lengths[id] = 0
 
-    @@threads << Thread.start do
-      song_url = SONG_URL % id
-      last_reported = 0.0
-
-      Rails.logger.info('Downloading song from ' + song_url)
-
-      content = open(song_url, 'rb',
-        content_length_proc: lambda do |length|
-          @@mu.synchronize do
-            @@total_lengths[id] = length
-          end
-
+        @@threads << Thread.start do
+          song_url = SONG_URL % id
           last_reported = 0.0
-          ActionCable.server.broadcast "songs_notifications_channel",
-            type: 'download_progress_update',
-            id: id,
-            progress: 0.0
-        end,
-        progress_proc: lambda do |size|
-          @@mu.synchronize do
-            @@downloaded_lengths[id] = size
+
+          Rails.logger.info('Downloading song from ' + song_url)
+
+          content = open(song_url, 'rb',
+            content_length_proc: lambda do |length|
+              @@mu.synchronize do
+                @@total_lengths[id] = length
+              end
+            end,
+            progress_proc: lambda do |size|
+              @@mu.synchronize do
+                @@downloaded_lengths[id] = size
+              end
+
+              progress = 1.0 * size / @@total_lengths[id]
+              if (100 * last_reported).to_i != (100 * progress).to_i
+                last_reported = progress
+                ActionCable.server.broadcast "songs_notifications_channel",
+                  type: 'download_progress_update',
+                  id: id,
+                  progress: progress
+              end
+            end
+          ).read
+
+          open(self.downloaded_video_path(id), 'wb') do |f|
+            f.write(content)
           end
 
-          progress = 1.0 * size / @@total_lengths[id]
-          if (100 * last_reported).to_i != (100 * progress).to_i
-            last_reported = progress
-            ActionCable.server.broadcast "songs_notifications_channel",
-              type: 'download_progress_update',
-              id: id,
-              progress: progress
+          @@mu.synchronize do
+            @@downloaded << id
+
+            @@total_lengths.delete(id)
+            @@downloaded_lengths.delete(id)
           end
         end
-      ).read
 
-      open(self.song_path(id), 'wb') do |f|
-        f.write(content)
+        true
       end
     end
-
-    return true
   end
 
-  def self.song_path(id)
+  def self.downloaded_video_path(id)
     FileUtils.mkdir_p(SONG_FOLDER)
     SONG_FOLDER.join("#{id}.mpg")
   end

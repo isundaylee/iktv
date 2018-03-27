@@ -14,7 +14,7 @@
 - else
   %table#songlist
     - @songs.each do |song|
-      - downloaded, progress = song.status
+      - downloaded, progress = song.download_status
       %tr{id: 'song_' + song.id.to_s}
         %td.name
           = song.name
