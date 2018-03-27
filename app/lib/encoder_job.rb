@@ -1,26 +1,21 @@
 require 'childprocess'
 require 'thread'
 
-ENCODING_OUTPUT_DIR = Rails.root.join('public/encoded')
-
 class EncoderJob
-  def initialize(song)
-    @song = song
+  def initialize(input_file, output_file, complete_proc)
+    @input_file = input_file
+    @output_file = output_file
     @process = nil
     @paused = false
-  end
+    @complete_proc = complete_proc
 
-  def start!
-    return false if ready?
+    FileUtils.mkdir_p(File.dirname(@output_file))
 
-    input_file = Songbook.downloaded_video_path(@song.id)
-    output_file = encoded_video_path
-
-    audio_track_index = FFMPEG::Movie.new(input_file.to_s).audio_streams[-1][:index]
+    audio_track_index = FFMPEG::Movie.new(@input_file.to_s).audio_streams[-1][:index]
 
     arguments = %W(ffmpeg)
     arguments += %W(-y)
-    arguments += %W(-i #{input_file})
+    arguments += %W(-i #{@input_file})
     arguments += %W(-map 0:0)
     arguments += %W(-map 0:#{audio_track_index})
     arguments += %W(-b 1000k)
@@ -30,91 +25,61 @@ class EncoderJob
     arguments += %W(-hls_list_size 0)
     arguments += %W(-live_start_index -10000)
     arguments += %W(-g 24)
-    arguments += %W(#{output_file})
+    arguments += %W(#{@output_file})
 
-    Rails.logger.info("FFMPEG encoding command: " + arguments.join(' '))
+    Rails.logger.info("FFMPEG encoding (#{@input_file}) command: " + arguments.join(' '))
 
     @process = ChildProcess.build(*arguments)
     @process.start
-    Rails.logger.info("FFMPEG encoding (#{@song.id}) started.")
+    Rails.logger.info("FFMPEG encoding (#{@input_file}) started.")
 
     start_monitor_thread
-
-    true
-  end
-
-  def started?
-    !@process.nil?
-  end
-
-  def running?
-    started? && !finished?
-  end
-
-  def ready?
-    File.exists?(done_path)
   end
 
   def finished?
-    @process.nil? || @process.exited?
+    @process.exited?
+  end
+
+  def running?
+    !finished?
   end
 
   def stop!
-    return false if !running?
+    return false if finished?
 
     @process.stop
-    Rails.logger.info("FFMPEG encoding (#{@song.id}) stopped.")
+    Rails.logger.info("FFMPEG encoding (#{@input_file}) stopped.")
     true
   end
 
   def pause!
-    return false if !running?
+    return false if finished?
     return false if @paused
 
     Process.kill('STOP', @process.pid)
     @paused = true
-    Rails.logger.info("FFMPEG encoding (#{@song.id}) paused.")
+    Rails.logger.info("FFMPEG encoding (#{@input_file}) paused.")
     true
   end
 
   def resume!
-    return false if !running?
+    return false if finished?
     return false if !@paused
 
     Process.kill('CONT', @process.pid)
     @paused = false
-    Rails.logger.info("FFMPEG encoding (#{@song.id}) resumed.")
+    Rails.logger.info("FFMPEG encoding (#{@input_file}) resumed.")
     true
   end
 
-  def encoded_video_path
-    output_dir.join("frags.m3u8")
-  end
-
-  def fragment_video_path(fragment_id)
-    output_dir.join("frags#{fragment_id}.ts")
-  end
-
   private
-    def output_dir
-      output_dir = ENCODING_OUTPUT_DIR.join("#{@song.id}")
-      FileUtils.mkdir_p(output_dir)
-      output_dir
-    end
-
-    def done_path
-      output_dir.join('done')
-    end
 
     def start_monitor_thread
       Thread.start do
         @process.wait
 
-        Rails.logger.info("FFMPEG encoding (#{@song.id}) exit code: #{@process.exit_code}")
-
-        if @process.exit_code == 0
-          FileUtils.touch(done_path)
-        end
+        Rails.logger.info("FFMPEG encoding (#{@input_file}) exit code: #{@process.exit_code}")
+        @complete_proc.call(@process.exit_code)
       end
     end
 end

@@ -18,13 +18,12 @@ class Playlist
     return @@mu.synchronize do
       result = nil
       @@list.each do |song|
-        if Songbook.get_status(song)[0]
+        if Songbook.downloaded?(song)
           @@list.delete(song)
           result = song
           break
         end
       end
-
 
       @@playing = result
       update_encoder_schedule
