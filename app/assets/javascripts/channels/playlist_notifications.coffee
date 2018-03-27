@@ -2,6 +2,8 @@ App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificatio
   connected: ->
     # When the channel connects
     if window.isPlayer
+      @lastProcessedPlaySeq = -1
+
       if !@started
         @started = true
         @playNext()
@@ -11,8 +13,11 @@ App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificatio
 
   received: (data) ->
     if window.isPlayer
+      console.log(data, @lastProcessedPlaySeq)
       if data.type == 'play'
-        window.playSong(data.url)
+        if data.seq > @lastProcessedPlaySeq
+          @lastProcessedPlaySeq = data.seq
+          window.playSong(data.url)
 
   playNext: ->
     @perform('play_next')

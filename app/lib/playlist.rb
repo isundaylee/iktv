@@ -6,6 +6,8 @@ class Playlist
   @@playing = nil
   @@mu = Mutex.new
 
+  @@play_message_seq = 0
+
   def self.upcomings
     return @@mu.synchronize do
       @@list
@@ -40,7 +42,9 @@ class Playlist
 
       ActionCable.server.broadcast "playlist_notifications_channel",
         type: 'play',
-        url: nil
+        url: nil,
+        seq: @@play_message_seq
+      @@play_message_seq += 1
 
       if Encoder.wait_until_ready(@@playing)
         link = Rails.application.routes.url_helpers.play_song_path(Song.find(@@playing))
@@ -51,7 +55,9 @@ class Playlist
 
     ActionCable.server.broadcast "playlist_notifications_channel",
       type: 'play',
-      url: link
+      url: link,
+      seq: @@play_message_seq
+    @@play_message_seq += 1
   end
 
   def self.append(id)
