@@ -1,22 +1,30 @@
+require 'thread'
 require 'songbook'
 
 class Playlist
   @@list = []
   @@playing = false
+  @@mu = Mutex.new
 
   def self.upcomings
-    return @@list
+    return @@mu.synchronize do
+      @@list
+    end
   end
 
   def self.pop_next()
-    @@list.each do |song|
-      if Songbook.get_status(song)[0]
-        @@list.delete(song)
-        return song
+    return @@mu.synchronize do
+      result = nil
+      @@list.each do |song|
+        if Songbook.get_status(song)[0]
+          @@list.delete(song)
+          result = song
+          break
+        end
       end
-    end
 
-    return nil
+      result
+    end
   end
 
   def self.next()
@@ -24,7 +32,10 @@ class Playlist
 
     if id.nil?
       link = nil
-      @@playing = false
+
+      @@mu.synchronize do
+        @@playing = false
+      end
     else
       song = Song.find(id)
 
@@ -39,7 +50,10 @@ class Playlist
 
       if Encoder.wait_until_ready(id)
         link = song.play_path
-        @@playing = true
+
+        @@mu.synchronize do
+          @@playing = true
+        end
       else
         link = nil
       end
@@ -51,14 +65,38 @@ class Playlist
   end
 
   def self.append(id)
-    @@list << id
+    should_play_next = @@mu.synchronize do
+      @@list << id
+      !@@playing
+    end
 
-    if !@@playing
+    if should_play_next
       self.next()
     end
   end
 
+  def self.shuffle
+    @@mu.synchronize do
+      @@list.shuffle!
+    end
+  end
+
+  def self.move_to_front(id)
+    @@mu.synchronize do
+      if !@@list.include?(id)
+        false
+      else
+        @@list.delete(id)
+        @@list.unshift(id)
+      end
+    end
+  end
+
   def self.get_index_of_song(id)
-    @@list.index(id)
+    result = @@mu.synchronize do
+      @@list.index(id)
+    end
+
+    result
   end
 end

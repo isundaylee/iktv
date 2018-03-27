@@ -6,7 +6,12 @@ Rails.application.routes.draw do
     member do
       post 'download'
       post 'append_to_playlist'
+      post 'move_to_front'
       get 'play'
+    end
+
+    collection do
+      post 'shuffle'
     end
   end
 end

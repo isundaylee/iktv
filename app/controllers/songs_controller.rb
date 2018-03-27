@@ -34,5 +34,19 @@ class SongsController < ApplicationController
     redirect_back(fallback_location: root_path)
   end
 
+  def shuffle
+    Playlist.shuffle()
+
+    redirect_back(fallback_location: root_path)
+  end
+
+  def move_to_front
+    id = params[:id].to_i
+
+    Playlist.move_to_front(id)
+
+    redirect_back(fallback_location: root_path)
+  end
+
   private
 end

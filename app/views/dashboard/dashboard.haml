@@ -3,6 +3,9 @@
   = link_to '已点歌曲', root_path(term: '__PLAYLIST__')
   = link_to '下载歌曲', root_path(term: '__DOWNLOADING__')
 
+  - if @is_playlist
+    = link_to '随机打乱', shuffle_songs_path, method: :POST
+
 = form_tag(root_path, id: 'search_form', method: :GET) do
   = text_field_tag :term, @term, placeholder: '搜索歌曲名'
 
@@ -27,8 +30,11 @@
             %span.progress{'data-id' => song.id}
               = '%d%' % (100 * progress)
         %td.play
-          - index = Playlist.get_index_of_song(song.id)
-          - if index.nil?
-            = link_to '点播', append_to_playlist_song_path(song), method: 'POST'
+          - if @is_playlist
+            = link_to '置顶', move_to_front_song_path(song), method: 'POST'
           - else
-            = "已点歌曲 - #{index}"
+            - index = Playlist.get_index_of_song(song.id)
+            - if index.nil?
+              = link_to '点播', append_to_playlist_song_path(song), method: 'POST'
+            - else
+              = "已点歌曲 - #{index}"
