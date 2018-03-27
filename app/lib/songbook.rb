@@ -55,8 +55,9 @@ class Songbook
 
     @@threads << Thread.start do
       song_url = SONG_URL % id
+      last_reported = 0.0
 
-      puts 'Downloading song from ' + song_url
+      Rails.logger.info('Downloading song from ' + song_url)
 
       content = open(song_url, 'rb',
         content_length_proc: lambda do |length|
@@ -64,6 +65,7 @@ class Songbook
             @@total_lengths[id] = length
           end
 
+          last_reported = 0.0
           ActionCable.server.broadcast "songs_notifications_channel",
             type: 'download_progress_update',
             id: id,
@@ -74,10 +76,14 @@ class Songbook
             @@downloaded_lengths[id] = size
           end
 
-          ActionCable.server.broadcast "songs_notifications_channel",
-            type: 'download_progress_update',
-            id: id,
-            progress: 1.0 * size / @@total_lengths[id]
+          progress = 1.0 * size / @@total_lengths[id]
+          if (100 * last_reported).to_i != (100 * progress).to_i
+            last_reported = progress
+            ActionCable.server.broadcast "songs_notifications_channel",
+              type: 'download_progress_update',
+              id: id,
+              progress: progress
+          end
         end
       ).read
 
