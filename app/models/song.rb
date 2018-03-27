@@ -10,6 +10,6 @@ class Song < ApplicationRecord
   end
 
   def play_path
-    '/songs/' + self.id.to_s + '.frags/frags.m3u8'
+    "/encoded/#{self.id}/frags.m3u8"
   end
 end

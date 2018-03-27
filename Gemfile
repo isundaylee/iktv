@@ -58,3 +58,5 @@ gem 'sass'
 gem 'jquery-rails'
 
 gem 'streamio-ffmpeg'
+
+gem 'childprocess'

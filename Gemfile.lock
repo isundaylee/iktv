@@ -187,6 +187,7 @@ PLATFORMS
 DEPENDENCIES
   byebug
   capybara (~> 2.13)
+  childprocess
   coffee-rails (~> 4.2)
   haml
   jbuilder (~> 2.5)
