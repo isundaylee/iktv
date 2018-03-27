@@ -29,6 +29,10 @@ class Encoder
     @@encoded.include?(id)
   end
 
+  def self.encoding?(id)
+    @@jobs.keys.include?(id)
+  end
+
   def self.encoded
     @@encoded.clone
   end

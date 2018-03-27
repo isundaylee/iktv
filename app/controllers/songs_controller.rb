@@ -17,7 +17,7 @@ class SongsController < ApplicationController
     lines = File.read(Encoder.encoded_video_path(id)).lines
     0.upto(lines.count - 1) do |i|
       if lines[i] =~ /^.+\.ts$/
-        lines[i] = song.encoded_fragments_path + "/" + lines[i]
+        lines[i] = song.encoded_video_dir_path + "/" + lines[i]
       end
     end
 
