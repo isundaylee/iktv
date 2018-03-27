@@ -35,7 +35,7 @@ class Encoder
       full_schedule << id
     end
 
-    full_schedule
+    full_schedule.select { |s| Songbook.get_status(s)[0] }
   end
 
   def self.schedule
