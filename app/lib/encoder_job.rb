@@ -7,10 +7,11 @@ class EncoderJob
   def initialize(song)
     @song = song
     @process = nil
+    @paused = false
   end
 
   def start!
-    return false if done?
+    return false if ready?
 
     input_file = Songbook.song_path(@song.id)
     output_file = encoded_video_path
@@ -27,6 +28,7 @@ class EncoderJob
     arguments += %W(-f hls)
     arguments += %W(-hls_time 1)
     arguments += %W(-hls_list_size 0)
+    arguments += %W(-live_start_index -10000)
     arguments += %W(-g 24)
     arguments += %W(#{output_file})
 
@@ -34,6 +36,7 @@ class EncoderJob
 
     @process = ChildProcess.build(*arguments)
     @process.start
+    Rails.logger.info("FFMPEG encoding (#{@song.id}) started.")
 
     start_monitor_thread
 
@@ -44,7 +47,11 @@ class EncoderJob
     !@process.nil?
   end
 
-  def done?
+  def running?
+    started? && !finished?
+  end
+
+  def ready?
     File.exists?(done_path)
   end
 
@@ -53,23 +60,30 @@ class EncoderJob
   end
 
   def stop!
-    return false if finished?
+    return false if !running?
 
     @process.stop
+    Rails.logger.info("FFMPEG encoding (#{@song.id}) stopped.")
     true
   end
 
   def pause!
-    return false if finished?
+    return false if !running?
+    return false if @paused
 
     Process.kill('STOP', @process.pid)
+    @paused = true
+    Rails.logger.info("FFMPEG encoding (#{@song.id}) paused.")
     true
   end
 
   def resume!
-    return false if finished?
+    return false if !running?
+    return false if !@paused
 
     Process.kill('CONT', @process.pid)
+    @paused = false
+    Rails.logger.info("FFMPEG encoding (#{@song.id}) resumed.")
     true
   end
 

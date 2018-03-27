@@ -7,12 +7,80 @@ class Encoder
   @@in_progress = []
 
   @@jobs = {}
+  @@schedule = []
+
+  @monitor_thread = Thread.start do
+    while true
+      schedule
+      sleep(1)
+    end
+  end
+
+  def self.update_schedule(ids)
+    Rails.logger.info("Updating Encoder schedule to: " + ids.to_s)
+
+    @@schedule = ids.clone
+    schedule
+  end
+
+  def self.full_schedule
+    full_schedule = @@schedule.clone
+
+    @@jobs.keys.each do |id|
+      job = @@jobs[id]
+
+      next if !job.running?
+      next if full_schedule.include?(id)
+
+      full_schedule << id
+    end
+
+    full_schedule
+  end
+
+  def self.schedule
+    @@mu.synchronize do
+      @@schedule.each do |id|
+        load_job_for_song(id)
+      end
+
+      winner = nil
+      full_schedule.each do |id|
+        if !@@jobs[id].ready?
+          winner = id
+          break
+        end
+      end
+
+      Rails.logger.info("Scheduler decided to schedule #{winner} first.")
+
+      @@jobs.keys.each do |id|
+        job = @@jobs[id]
+
+        if id == winner
+          if !job.started?
+            job.start!
+          elsif
+            job.resume!
+          end
+        else
+          job.pause!
+        end
+      end
+    end
+  end
+
+  def self.pause_all()
+    @@mu.synchronize do
+      @@jobs.values.map(&:pause!)
+    end
+  end
 
   def self.start_encoding(id)
     @@mu.synchronize do
       load_job_for_song(id)
 
-      if @@jobs[id].done? || @@jobs[id].started?
+      if @@jobs[id].ready? || @@jobs[id].started?
         false
       else
         @@jobs[id].start!

@@ -11,15 +11,19 @@ class SongsController < ApplicationController
   end
 
   def play
-    @id = params[:id].to_i
-    @song = Song.find(@id)
+    id = params[:id].to_i
+    song = Song.find(id)
 
-    Encoder.start_encoding(id)
-    if Encoder.wait_until_ready(id)
-      redirect_to @song.play_path
-    else
-      redirect_to :root
+    lines = File.read(Encoder.encoded_video_path(id)).lines
+    0.upto(lines.count - 1) do |i|
+      if lines[i] =~ /^.+\.ts$/
+        lines[i] = song.encoded_fragments_path + "/" + lines[i]
+      end
     end
+
+    lines.insert(1, "#EXT-X-START:TIME-OFFSET=0\n")
+
+    render inline: lines.join, content_type: 'application/vnd.apple.mpegurl'
   end
 
   def append_to_playlist

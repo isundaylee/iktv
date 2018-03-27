@@ -3,7 +3,7 @@ require 'songbook'
 
 class Playlist
   @@list = []
-  @@playing = false
+  @@playing = nil
   @@mu = Mutex.new
 
   def self.upcomings
@@ -23,37 +23,27 @@ class Playlist
         end
       end
 
+
+      @@playing = result
+      update_encoder_schedule
+
       result
     end
   end
 
   def self.next()
-    id = pop_next()
+    pop_next()
+    link = nil
 
-    if id.nil?
-      link = nil
+    @@mu.synchronize do
+      break if @@playing.nil?
 
-      @@mu.synchronize do
-        @@playing = false
-      end
-    else
-      song = Song.find(id)
+      ActionCable.server.broadcast "playlist_notifications_channel",
+        type: 'play',
+        url: nil
 
-      Encoder.stop_all()
-      if Encoder.start_encoding(id)
-        # We actually started an encoding
-        # Send a blank screen before we're ready to show the actual song
-        ActionCable.server.broadcast "playlist_notifications_channel",
-          type: 'play',
-          url: nil
-      end
-
-      if Encoder.wait_until_ready(id)
-        link = song.play_path
-
-        @@mu.synchronize do
-          @@playing = true
-        end
+      if Encoder.wait_until_ready(@@playing)
+        link = Rails.application.routes.url_helpers.play_song_path(Song.find(@@playing))
       else
         link = nil
       end
@@ -67,28 +57,25 @@ class Playlist
   def self.append(id)
     should_play_next = @@mu.synchronize do
       @@list << id
-      !@@playing
-    end
-
-    if should_play_next
-      self.next()
+      update_encoder_schedule
     end
   end
 
   def self.shuffle
     @@mu.synchronize do
       @@list.shuffle!
+      update_encoder_schedule
     end
   end
 
   def self.move_to_front(id)
     @@mu.synchronize do
-      if !@@list.include?(id)
-        false
-      else
+      if @@list.include?(id)
         @@list.delete(id)
         @@list.unshift(id)
       end
+
+      update_encoder_schedule
     end
   end
 
@@ -99,4 +86,9 @@ class Playlist
 
     result
   end
+
+  private
+    def self.update_encoder_schedule
+      Encoder.update_schedule(([@@playing] + @@list).compact)
+    end
 end
