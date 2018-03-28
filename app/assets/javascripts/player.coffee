@@ -12,18 +12,27 @@ class App.Player
     else
       alert('You browser does not have HLS playback support. Sorry ):')
 
+    $(@video).on 'ended', =>
+      @onSongEndHandler()
+
+  onSongEnd: (handler) ->
+    @onSongEndHandler = handler
+
+  stop: ->
+    if @usingHLS
+      if @hls
+        @video.pause()
+        @hls.destroy()
+    else
+      # TODO
+
   play: (url) ->
     console.log('Playing URL: ' + url)
 
+    @stop()
+    return if !url
+
     if @usingHLS
-      if !url
-        if @hls
-          @video.pause()
-        return
-
-      if @hls
-        @hls.destroy()
-
       @hls = new Hls()
       @hls.attachMedia(@video)
       @hls.on Hls.Events.MEDIA_ATTACHED, =>

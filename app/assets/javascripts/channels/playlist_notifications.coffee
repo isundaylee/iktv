@@ -12,6 +12,7 @@ App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificatio
     # When the channel disconnects
 
   received: (data) ->
+    console.log 'Received playlist notification: ' + JSON.stringify(data)
     if App.isPlayer
       if data.type == 'play'
         if data.seq > @lastProcessedPlaySeq
