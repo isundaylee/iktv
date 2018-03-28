@@ -1,5 +1,6 @@
 require 'thread'
 require 'songbook'
+require 'encoder'
 
 class Playlist
   @@list = []

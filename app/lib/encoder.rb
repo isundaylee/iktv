@@ -17,14 +17,6 @@ class Encoder
     @@encoded << id
   end
 
-  # Thread that periodically reschedules encoding jobs
-  @monitor_thread = Thread.start do
-    while true
-      reschedule
-      sleep 1
-    end
-  end
-
   def self.encoded?(id)
     @@encoded.include?(id)
   end
@@ -133,6 +125,14 @@ class Encoder
 
         pause_all_except(winner)
         start_or_resume(winner)
+      end
+    end
+
+    # Thread that periodically reschedules encoding jobs
+    @monitor_thread = Thread.start do
+      while true
+        reschedule
+        sleep 1
       end
     end
 end
