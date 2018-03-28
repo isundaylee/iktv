@@ -1,6 +1,7 @@
 App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificationsChannel",
   connected: ->
-    # When the channel connects
+    console.log('Playlist notification connected.')
+
     if App.isPlayer
       @lastProcessedPlaySeq = -1
 
@@ -9,10 +10,10 @@ App.playlist_notifications = App.cable.subscriptions.create "PlaylistNotificatio
         @query()
 
   disconnected: ->
-    # When the channel disconnects
+    console.log('Playlist notification disconnected.')
 
   received: (data) ->
-    console.log 'Received playlist notification: ' + JSON.stringify(data)
+    console.log 'Playlist notification received: ' + JSON.stringify(data)
     if App.isPlayer
       if data.type == 'play'
         if data.seq > @lastProcessedPlaySeq
