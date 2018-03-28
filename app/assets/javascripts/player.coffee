@@ -1,14 +1,14 @@
 class App.Player
   constructor: (video) ->
     @video = video
-    @usingHLS = false
+    @usingHLSJS = false
 
   initialize: ->
-    if Hls.isSupported()
-      @usingHLS = true
+    if @video.canPlayType('application/vnd.apple.mpegurl')
+      console.log('Using native hls.js support for video playback.')
+    else if Hls.isSupported()
+      @usingHLSJS = true
       console.log('Using HLS for video playback.')
-    else if @video.canPlayType('application/vnd.apple.mpegurl')
-      console.log('Using native HLS support for video playback.')
     else
       alert('You browser does not have HLS playback support. Sorry ):')
 
@@ -19,12 +19,12 @@ class App.Player
     @onSongEndHandler = handler
 
   stop: ->
-    if @usingHLS
+    if @usingHLSJS
       if @hls
         @video.pause()
         @hls.destroy()
     else
-      # TODO
+      @video.pause()
 
   play: (url) ->
     console.log('Playing URL: ' + url)
@@ -32,7 +32,7 @@ class App.Player
     @stop()
     return if !url
 
-    if @usingHLS
+    if @usingHLSJS
       @hls = new Hls()
       @hls.attachMedia(@video)
       @hls.on Hls.Events.MEDIA_ATTACHED, =>
@@ -41,4 +41,7 @@ class App.Player
         @hls.on Hls.Events.MANIFEST_PARSED, =>
           @video.play()
     else
-      # TODO
+      @video.pause()
+      $(@video).find('source').attr('src', url)
+      @video.load()
+      @video.play()
