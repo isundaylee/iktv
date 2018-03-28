@@ -89,8 +89,10 @@ class Encoder
           lambda do |exit_code|
             FileUtils.touch(done_path(id)) if exit_code == 0
 
-            @@jobs.delete(id)
-            @@encoded << id
+            @@mu_reschedule.synchronize do
+              @@jobs.delete(id)
+              @@encoded << id
+            end
           end
         )
       end
