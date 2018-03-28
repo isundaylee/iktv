@@ -55,17 +55,9 @@ class Playlist
   end
 
   def self.append(id)
-    should_play_next = @@mu.synchronize do
+    @@mu.synchronize do
       @@list << id
       update_encoder_schedule
-
-      @@playing.nil?
-    end
-
-    if should_play_next
-      Thread.new do
-        self.next
-      end
     end
   end
 
@@ -107,5 +99,21 @@ class Playlist
           nil : Rails.application.routes.url_helpers.play_song_path(Song.find(song)),
         seq: @@play_message_seq
       @@play_message_seq += 1
+    end
+
+    @@monitor_thread = Thread.start do
+      while true
+        should_advance = @@mu.synchronize do
+          @@playing.nil?
+        end
+
+        if should_advance
+          if !advance.nil?
+            query
+          end
+        end
+
+        sleep 1
+      end
     end
 end
