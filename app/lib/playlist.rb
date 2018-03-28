@@ -14,7 +14,7 @@ class Playlist
     end
   end
 
-  def self.pop_next()
+  def self.advance()
     return @@mu.synchronize do
       result = nil
       @@list.each do |song|
@@ -32,37 +32,39 @@ class Playlist
     end
   end
 
-  def self.next()
-    pop_next()
-    link = nil
+  def self.next
+    advance
+    query
+  end
 
-    @@mu.synchronize do
-      break if @@playing.nil?
-
-      ActionCable.server.broadcast "playlist_notifications_channel",
-        type: 'play',
-        url: nil,
-        seq: @@play_message_seq
-      @@play_message_seq += 1
-
-      if Encoder.wait_until_ready(@@playing)
-        link = Rails.application.routes.url_helpers.play_song_path(Song.find(@@playing))
-      else
-        link = nil
-      end
+  def self.query
+    next_song = @@mu.synchronize do
+      @@playing
     end
 
-    ActionCable.server.broadcast "playlist_notifications_channel",
-      type: 'play',
-      url: link,
-      seq: @@play_message_seq
-    @@play_message_seq += 1
+    if next_song.nil?
+      broadcast_play nil
+    else
+      if Encoder.wait_until_ready(next_song)
+        broadcast_play next_song
+      else
+        broadcast_play nil
+      end
+    end
   end
 
   def self.append(id)
     should_play_next = @@mu.synchronize do
       @@list << id
       update_encoder_schedule
+
+      @@playing.nil?
+    end
+
+    if should_play_next
+      Thread.new do
+        self.next
+      end
     end
   end
 
@@ -95,5 +97,14 @@ class Playlist
   private
     def self.update_encoder_schedule
       Encoder.update_schedule(([@@playing] + @@list).compact)
+    end
+
+    def self.broadcast_play(song)
+      ActionCable.server.broadcast "playlist_notifications_channel",
+        type: 'play',
+        url: song.nil? ?
+          nil : Rails.application.routes.url_helpers.play_song_path(Song.find(song)),
+        seq: @@play_message_seq
+      @@play_message_seq += 1
     end
 end

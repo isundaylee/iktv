@@ -1,20 +1,9 @@
-playNextSong = ->
-  App.playlist_notifications.playNext()
-
-window.playSong = (path) ->
-  console.log('Playing: ' + path)
-
-  $('video')[0].pause()
-  $('video source').attr('src', path)
-  $('video')[0].load()
-  $('video')[0].play()
-
 ready = ->
-  window.isPlayer = ($('video').length > 0)
+  App.isPlayer = ($('video').length > 0)
 
-  if window.isPlayer
-    $('video').bind 'ended', ->
-      playNextSong()
+  if App.isPlayer
+    App.player = new App.Player($('video')[0])
+    App.player.initialize()
   else
     $('#play_next').click ->
       App.playlist_notifications.playNext()

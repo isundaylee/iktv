@@ -12,4 +12,8 @@ class PlaylistNotificationsChannel < ApplicationCable::Channel
   def play_next
     Playlist.next()
   end
+
+  def query
+    Playlist.query()
+  end
 end

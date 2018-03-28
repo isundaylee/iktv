@@ -6,7 +6,7 @@ App.songs_notifications = App.cable.subscriptions.create "SongsNotificationsChan
     # Called when the subscription has been terminated by the server
 
   received: (data) ->
-    if !window.isPlayer
+    if !App.isPlayer
       if data.type == 'download_progress_update'
         $('.status .progress[data-id=' + data.id.toString() + ']').text(
           Math.floor(100 * data.progress) + "%")
