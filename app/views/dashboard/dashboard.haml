@@ -28,7 +28,7 @@
           - else
             正在下载 -
             %span.progress{'data-id' => song.id}
-              = '%d%' % (100 * progress)
+              = '%d%%' % (100 * progress)
         %td.play
           - if @is_playlist
             = link_to '置顶', move_to_front_song_path(song), method: 'POST'
