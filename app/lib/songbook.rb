@@ -1,6 +1,9 @@
 require 'thread'
 require 'open-uri'
 require 'fileutils'
+require 'uri'
+
+require 'simple_proxy_client'
 
 SONG_FOLDER = Rails.root.join('public/songs')
 SONG_URL = 'http://www.x5bot.com/songmkv/mkv/%d.mpg'
@@ -64,27 +67,41 @@ class Songbook
 
           Rails.logger.info('Downloading song from ' + song_url)
 
-          content = open(song_url, 'rb',
-            content_length_proc: lambda do |length|
-              @@mu.synchronize do
-                @@total_lengths[id] = length
-              end
-            end,
-            progress_proc: lambda do |size|
-              @@mu.synchronize do
-                @@downloaded_lengths[id] = size
-              end
-
-              progress = 1.0 * size / @@total_lengths[id]
-              if (100 * last_reported).to_i != (100 * progress).to_i
-                last_reported = progress
-                ActionCable.server.broadcast "songs_notifications_channel",
-                  type: 'download_progress_update',
-                  id: id,
-                  progress: progress
-              end
+          content_length_proc = lambda do |length|
+            @@mu.synchronize do
+              @@total_lengths[id] = length
             end
-          ).read
+          end
+
+          progress_proc = lambda do |size|
+            @@mu.synchronize do
+              @@downloaded_lengths[id] = size
+            end
+
+            progress = 1.0 * size / @@total_lengths[id]
+            if (100 * last_reported).to_i != (100 * progress).to_i
+              last_reported = progress
+              ActionCable.server.broadcast "songs_notifications_channel",
+                type: 'download_progress_update',
+                id: id,
+                progress: progress
+            end
+          end
+
+          content = nil
+          if ENV['SIMPLE_PROXY_URI'].present?
+            proxy_host = ENV['SIMPLE_PROXY_URI'].split(':')[0]
+            proxy_port = ENV['SIMPLE_PROXY_URI'].split(':')[1]
+            content = simple_proxy_read(proxy_host, proxy_port, song_url,
+              content_length_proc: content_length_proc,
+              progress_proc: progress_proc
+            )
+          else
+            content = open(song_url, 'rb',
+              content_length_proc: content_length_proc,
+              progress_proc: progress_proc
+            ).read
+          end
 
           open(self.downloaded_video_path(id), 'wb') do |f|
             f.write(content)
