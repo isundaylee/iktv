@@ -22,7 +22,7 @@ def simple_proxy_read(proxy_host, proxy_port, url, content_length_proc: nil, pro
 
   content_length_proc.call(length) unless content_length_proc.nil?
 
-  s.print("get " + url + "\n")
+  s.print("sget " + url + "\n")
   s.print("bye\n")
   content = ""
 
